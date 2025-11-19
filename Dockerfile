@@ -1,44 +1,18 @@
-name: Docker CI
+# specify base image
+FROM adoptopenjdk/openjdk11:slim
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+# install Maven on top of base image
+RUN apt-get update && apt-get install -y --no-install-recommends maven
 
-jobs:
+# define working directory
+WORKDIR /app
 
-  test_dockerized_webserver:
+# copy over app files
+COPY pom.xml .
+COPY src src
 
-    runs-on: ubuntu-latest
+# expose default Spring Boot port 8080
+EXPOSE 8080
 
-    permissions:
-      contents: read
-
-    steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Install Chrome Web Browser
-        run: sudo apt-get -y install google-chrome-stable
-
-      - name: Install Chrome Web Driver
-        run: selenium/manager/linux/selenium-manager --browser chrome
-
-      - name: Launch Web Service
-        run: docker compose up -d
-
-      - name: Run Selenium Tests
-        run: cd selenium && mvn test
+# define default command
+CMD ["/bin/sh", "-c", "mvn spring-boot:run"]
